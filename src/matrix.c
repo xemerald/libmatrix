@@ -109,22 +109,27 @@ static void *(* MatrixAlignAllocFunc)( size_t, size_t ) = aligned_alloc;
  *
  * @param a
  * @param stream
+ * @param format
  */
-void matrix_print( const matrix_t *a, FILE *stream )
+void matrix_print( const matrix_t *a, FILE *stream, const char *format )
 {
+	const char *_format = format ? format : "%lf";
+
 /* */
 	if ( a ) {
 		for ( register size_t i = 0; i < a->i; i++ ) {
-			fprintf(stream, "| ");
+			fputs("| ", stream);
 		/* */
-			for ( register size_t j = 0; j < a->j; j++ )
-				fprintf(stream, "%lf ", a->element[i * a->j + j]);
+			for ( register size_t j = 0; j < a->j; j++ ) {
+				fprintf(stream, _format, a->element[i * a->j + j]);
+				fputc(' ', stream);
+			}
 		/* */
-			fprintf(stream, "|\n");
+			fputs("|\n", stream);
 		}
 	}
 	else {
-		fprintf(stream, "| Null Matrix |\n");
+		fputs("| Null Matrix |\n", stream);
 	}
 
 	return;
@@ -768,7 +773,7 @@ static matrix_t *_matrix_inv( const matrix_t *a )
 /* */
 	if ( (tmp = _matrix_dup( a )) && (result = _matrix_idt( a->i ))) {
 	#ifdef __USE_AVX_INTRIN
-		register __m256i mask;
+		register __m256i mask = _mm256_setzero_si256();
 		register int     frac;
 	/* */
 		if ( (frac = a->j % STEP_AVX_PD) > 1 ) {
